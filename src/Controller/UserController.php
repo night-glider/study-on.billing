@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Gesdinet\JWTRefreshTokenBundle\Generator\RefreshTokenGeneratorInterface;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 use PHP_CodeSniffer\Tokenizers\JS;
@@ -20,6 +21,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
+
 use function Sodium\add;
 
 class UserController extends AbstractController
@@ -75,6 +78,10 @@ class UserController extends AbstractController
      *     @OA\JsonContent(
      *        @OA\Property(
      *          property="token",
+     *          type="string",
+     *        ),
+     *     @OA\Property(
+     *          property="refresh_token",
      *          type="string",
      *        ),
      *     )
@@ -160,8 +167,11 @@ class UserController extends AbstractController
      * )
      * @OA\Tag(name="User")
      */
-    public function register(Request $request): JsonResponse
-    {
+    public function register(
+        Request $request,
+        RefreshTokenGeneratorInterface $refreshTokenGenerator,
+        RefreshTokenManagerInterface $refreshTokenManager
+    ): JsonResponse {
         $DTO_user = $this->serializer->deserialize($request->getContent(), UserDTO::class, 'json');
         $errors = $this->validator->validate($DTO_user);
         if (count($errors) > 0) {
@@ -180,6 +190,12 @@ class UserController extends AbstractController
         $user->setPassword(
             $this->passwordHasher->hashPassword($user, $user->getPassword())
         );
+
+        $refreshToken = $refreshTokenGenerator->createForUserWithTtl(
+            $user,
+            (new \DateTime())->modify('+1 month')->getTimestamp()
+        );
+        $refreshTokenManager->save($refreshToken);
 
         $this->entityManager->getRepository(User::class)->add($user, true);
 

@@ -28,6 +28,12 @@ security:
             stateless: true
             jwt: ~
 
+        api_token_refresh:
+            pattern: ^/api/v1/token/refresh
+            stateless: true
+            refresh_jwt:
+                check_path: /api/v1/token/refresh # or, you may use the `api_refresh_token` route name
+
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
@@ -35,6 +41,7 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            stateless: true
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -47,7 +54,9 @@ security:
     access_control:
         - { path: ^/api/v1/auth, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/token/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/doc, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/courses, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }

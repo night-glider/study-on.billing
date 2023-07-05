@@ -3,6 +3,7 @@
 namespace App\Tests;
 
 use App\Entity\User;
+use App\Service\PaymentService;
 use App\Tests\AbstractTest;
 use App\DataFixtures\AppFixtures;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,13 +16,13 @@ class UserControllerTest extends AbstractTest
     private string $getCurrentUserURL = '/api/v1/users/current';
     private string $userEmail = 'user@gmail.com';
     private string $userPassword = 'user';
-    private float $userBalance = 25.4;
 
     protected function getFixtures(): array
     {
         return [
             new AppFixtures(
                 $this->getContainer()->get(UserPasswordHasherInterface::class),
+                $this->getContainer()->get(PaymentService::class)
             )
         ];
     }
@@ -189,7 +190,6 @@ class UserControllerTest extends AbstractTest
         $responseData = json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
         $this->assertEquals($this->userEmail, $responseData['username']);
         $this->assertTrue(in_array('ROLE_USER', $responseData['roles'], true));
-        $this->assertEquals($this->userBalance, $responseData['balance']);
     }
     public function testGetCurrentUserFailed()
     {
